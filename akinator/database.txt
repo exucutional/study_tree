@@ -1,18 +1,22 @@
-{Животное
-    {Обитает_в_болоте
-        {Лягушка
+{Animal
+    {Live_underwater
+        {Shark
         }
-        {Собака
+        {Bear
         }
     }
-    {Растение
-        {Дерево
-            {Дуб
+    {Plant
+        {Spiky
+            {Cactus
             }
-            {ХЗ
+            {Vegetable
+                {Potato
+                }
+                {Tree
+                }
             }
         }
-        {ХЗ
+        {Stone
         }
     }
 }
