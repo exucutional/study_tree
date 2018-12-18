@@ -1,7 +1,7 @@
 /*!
  * \brief differ.h
  * \author Exdev
- * \version 0.7
+ * \version 0.8
  */
 
 #ifndef DIFFER_H_

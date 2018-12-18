@@ -11,10 +11,19 @@
 #include "tree_t.h"
 #include "differ.h"
 
+#define TRG_WRT(name)	\
+	do {	\
+		asprintf(eq_text, "%s"#name"(", *eq_text);	\
+		func_rec(tree->left, eq_text);	\
+		asprintf(eq_text, "%s)", *eq_text);	\
+	}	\
+	while (0)
+
 int main(int argc, char *argv[])
 {
 	FILE *fin = fopen(argv[1], "r");
 	diff_run(fin);
+	fclose(fin);
 	return 0;
 }
 
@@ -22,10 +31,12 @@ void diff_run(FILE *fin)
 {
 	assert(fin);
 	struct node_t *tree = NULL;
-	char *intext = read_file(fin);
+	char *intext = NULL;
+	intext = read_file(fin);
 	assert(intext);
 	tree = node_inread(tree, &intext);
 	assert(tree);
+	//free(intext);
 	char *eq_text = NULL;
 	asprintf(&eq_text, "\\documentclass[12pt,a4paper]{article}\n\\usepackage{amsmath}\n\\begin{document}\n$$f(x) = ");
 	func_rec(tree, &eq_text);
@@ -293,24 +304,16 @@ void func_rec(struct node_t *tree, char **eq_text)
 		asprintf(eq_text, "%sx", *eq_text);
 		break;
 	case SIN:
-		asprintf(eq_text, "%ssin(", *eq_text);
-		func_rec(tree->left, eq_text);
-		asprintf(eq_text, "%s)", *eq_text);
+		TRG_WRT(sin);
 		break;
 	case COS:
-		asprintf(eq_text, "%scos(", *eq_text);
-		func_rec(tree->left, eq_text);
-		asprintf(eq_text, "%s)", *eq_text);
+		TRG_WRT(cos);
 		break;
 	case TAN:
-		asprintf(eq_text, "%stg(", *eq_text);
-		func_rec(tree->left, eq_text);
-		asprintf(eq_text, "%s)", *eq_text);
+		TRG_WRT(tg);
 		break;
 	case CTAN:
-		asprintf(eq_text, "%sctg(", *eq_text);
-		func_rec(tree->left, eq_text);
-		asprintf(eq_text, "%s)", *eq_text);
+		TRG_WRT(ctg);
 		break;
 	default:
 		break;
