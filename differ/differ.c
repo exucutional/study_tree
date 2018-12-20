@@ -226,7 +226,7 @@ void func_rec(struct node_t *tree, char **eq_text)
 					} else {	\
 						func_rec(tree->left, eq_text);	\
 					}	\
-					asprintf(eq_text, "%s*", *eq_text);	\
+					asprintf(eq_text, "%s"#sym, *eq_text);	\
 					if(!right_no_br) {	\
 						asprintf(eq_text, "%s(", *eq_text);	\
 						func_rec(tree->right, eq_text);	\
