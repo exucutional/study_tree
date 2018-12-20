@@ -64,7 +64,7 @@ struct node_t *differ(struct node_t *tree)
 		tree->val = 0;
 		tree->data_type = INT;
 		break;
-	case X:
+	case VAR:
 		tree->val = 1;
 		tree->data_type = INT;
 		break;
@@ -114,18 +114,10 @@ struct node_t *dif_mul(struct node_t *tree)
 	assert(tree);
 	assert(tree->right);
 	assert(tree->left);
-	left = tree->left;
-	right = tree->right;
-	tree->val = MUL;
-	tree->left = node_init(OPER, MUL);
-	tree->right = node_init(OPER, MUL);
-	tree->left->left = differ(node_copy(left));
-	tree->left->right = node_copy(right);
-	tree->right->right = differ(node_copy(right));
-	tree->right->left = node_copy(left);
-	free(left);
-	free(right);
-	return tree;
+	left = MUL(differ(node_copy(tree->left)), tree->right);
+	right = MUL(tree->left, differ(node_copy(tree->right)));
+	free(tree);
+	return PLUS(left, right);
 }
 
 struct node_t *dif_div(struct node_t *tree)
@@ -135,21 +127,10 @@ struct node_t *dif_div(struct node_t *tree)
 	assert(tree);
 	assert(tree->left);
 	assert(tree->right);
-	left = tree->left;
-	right = tree->right;
-	tree->left = node_init(OPER, MINUS);
-	tree->right = node_init(OPER, MUL);
-	tree->left->left = node_init(OPER, MUL);
-	tree->left->right = node_init(OPER, MUL);
-	tree->left->left->left = differ(node_copy(left));
-	tree->left->left->right = node_copy(right);
-	tree->left->right->left = node_copy(left);
-	tree->left->right->right = differ(node_copy(right));
-	tree->right->left = node_copy(right);
-	tree->right->right = node_copy(right);
-	free(left);
-	free(right);
-	return tree;
+	left = MINUS(MUL(differ(node_copy(tree->left)), tree->right), MUL(tree->left, differ(node_copy(tree->right))));
+	right = MUL(node_copy(tree->right), node_copy(tree->right));
+	free(tree);
+	return DIV(left, right);
 }
 
 struct node_t *dif_sin(struct node_t *tree)
@@ -157,12 +138,9 @@ struct node_t *dif_sin(struct node_t *tree)
 	struct node_t *left = NULL;
 	assert(tree);
 	assert(tree->left);
-	tree->val = MUL;
 	left = tree->left;
-	tree->left = node_init(OPER, COS);
-	tree->left->left = node_copy(left);
-	tree->right = differ(left);
-	return tree;
+	free(tree);
+	return MUL(COS(left), differ(node_copy(left)));
 }
 
 struct node_t *dif_cos(struct node_t *tree)
@@ -170,47 +148,27 @@ struct node_t *dif_cos(struct node_t *tree)
 	struct node_t *left = NULL;
 	assert(tree);
 	assert(tree->left);
-	tree->val = MUL;
 	left = tree->left;
-	tree->left = node_init(OPER, MUL);
-	tree->left->left = node_init(INT, -1);
-	tree->left->right = node_init(OPER, SIN);
-	tree->left->right->left = node_copy(left);
-	tree->right = differ(left);
-	return tree;
+	free(tree);
+	return MUL(MUL(INT(-1), SIN(left)), differ(node_copy(left)));
 }
 struct node_t *dif_tan(struct node_t *tree)
 {
 	struct node_t *left = NULL;
 	assert(tree);
 	assert(tree->left);
-	tree->val = DIV;
 	left = tree->left;
-	tree->left = differ(node_copy(left));
-	tree->right = node_init(OPER, MUL);
-	tree->right->left = node_init(OPER, COS);
-	tree->right->left->left = node_copy(left);
-	tree->right->right = node_init(OPER, COS);
-	tree->right->right->left = node_copy(left);
-	free(left);
-	return tree;
+	free(tree);
+	return DIV(differ(node_copy(left)), MUL(COS(node_copy(left)), COS(left)));
 }
 struct node_t *dif_ctan(struct node_t *tree)
 {
 	struct node_t *left = NULL;
 	assert(tree);
 	assert(tree->left);
-	tree->val = DIV;
 	left = tree->left;
-	tree->left = node_init(OPER, MUL);
-	tree->left->left = node_init(INT, -1);
-	tree->left->right = differ(node_copy(left));
-	tree->right = node_init(OPER, MUL);
-	tree->right->left = node_init(OPER, SIN);
-	tree->right->left->left = node_copy(left);
-	tree->right->right = node_init(OPER, SIN);
-	tree->right->right->left = node_copy(left);
-	free(left);
+	free(tree);
+	return DIV(MUL(INT(-1), differ(node_copy(left))), MUL(SIN(node_copy(left)), SIN(left)));
 	return tree;
 }
 
@@ -226,6 +184,8 @@ void func_dump(char *eq_text)
 
 void func_rec(struct node_t *tree, char **eq_text)
 {
+	int l_t = 0;
+	int r_t = 0;
 	if (!tree)
 		return;
 	switch(tree->data_type) {
@@ -235,8 +195,15 @@ void func_rec(struct node_t *tree, char **eq_text)
 	case DOUB:
 		asprintf(eq_text, "%s%lf", *eq_text, (double)tree->val);
 		break;
-	case X:
-		asprintf(eq_text, "%sx", *eq_text);
+	case VAR:
+		switch((int)tree->val) {
+		#define VARIABLE(sym, name)	\
+		case name:	\
+			asprintf(eq_text, "%s"#sym, *eq_text);	\
+			break;
+		#include"variables.h"
+		#undef VARIABLE
+		}
 		break;
 	case OPER:
 		switch((int)tree->val) {
@@ -249,11 +216,25 @@ void func_rec(struct node_t *tree, char **eq_text)
 				func_rec(tree->right, eq_text);	\
 				break;	\
 			case BR:	\
-				asprintf(eq_text, "%s(", *eq_text);	\
-				func_rec(tree->left, eq_text);	\
-				asprintf(eq_text, ")%s"#sym"(", *eq_text);	\
-				func_rec(tree->right, eq_text);	\
-				asprintf(eq_text, "%s)", *eq_text);	\
+					l_t = tree->left->val;	\
+					r_t = tree->right->val;	\
+					int left_no_br = (l_t != PLUS && l_t != MINUS && tree->left->val >= 0);	\
+					int right_no_br = (r_t != PLUS && r_t != MINUS && tree->right->val >= 0);	\
+					if (!left_no_br) {	\
+						asprintf(eq_text, "%s(", *eq_text);	\
+						func_rec(tree->left, eq_text);	\
+						asprintf(eq_text, "%s)", *eq_text);	\
+					} else {	\
+						func_rec(tree->left, eq_text);	\
+					}	\
+					asprintf(eq_text, "%s*", *eq_text);	\
+					if(!right_no_br) {	\
+						asprintf(eq_text, "%s(", *eq_text);	\
+						func_rec(tree->right, eq_text);	\
+						asprintf(eq_text, "%s)", *eq_text);	\
+					} else {	\
+						func_rec(tree->right, eq_text);	\
+					}	\
 				break;	\
 			case DBR:	\
 				asprintf(eq_text, "%s\\frac{", *eq_text);	\

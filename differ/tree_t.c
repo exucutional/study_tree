@@ -11,22 +11,8 @@
 #include <assert.h>
 #include <string.h>
 #include "tree_t.h"
+#include "differ.h"
 #include <ctype.h>
-
-#define WRITE_DATA(type, data)	\
-	do {	\
-		switch (type) {	\
-		case INT:	\
-			asprintf(dump_text, "%s%d];\n", *dump_text, *(int*)data);	\
-			break;	\
-		case DOUB:	\
-			asprintf(dump_text, "%s%lf];\n", *dump_text, *(double*)data);	\
-			break;	\
-		default:	\
-			asprintf(dump_text, "%s\"%s\"];\n", *dump_text, (char*)data);	\
-			break;	\
-		}	\
-	} while (0)
 
 #define NODE_CH_WRT(type, name)	\
 	do {	\
@@ -42,11 +28,13 @@ struct node_t *node_ctor()
 	return tree;
 }
 
-struct node_t *node_init(uint8_t type, double val)
+struct node_t *node_init(uint8_t type, double val, struct node_t *left, struct node_t *right)
 {
 	struct node_t *tree = calloc(1, sizeof(struct node_t));
 	tree->data_type = type;
 	tree->val = val;
+	tree->left = left;
+	tree->right = right;
 	return tree;
 }
 
@@ -55,37 +43,8 @@ struct node_t *node_copy(struct node_t *tree)
 {
 	if (!tree)
 		return NULL;
-	struct node_t *copy = NULL;
-	switch(tree->data_type) {
-	case INT:
-		copy = node_init(INT, tree->val);
-		break;
-	case DOUB:
-		copy = node_init(DOUB, tree->val);
-		break;
-	case X:
-		copy = node_init(X, OPERATOR_NULL);
-		break;
-	case OPER:
-		switch((int)tree->val) {
-		#define OPERATOR(sym, name, act, outform)	\
-		case name:	\
-			copy = node_init(OPER, name);	\
-			break;
-		#include "operators.h"
-		#undef OPERATOR
-		default:
-			fprintf(stderr, "Unknown operator %d\n", (int)tree->val);
-			assert(0);
-		}
-		break;
-	default:
-		fprintf(stderr, "Unknown data type %d\n", tree->data_type);
-		assert(0);
-	}
-	copy->left = node_copy(tree->left);
-	copy->right = node_copy(tree->right);
-	return copy;
+	//printf("%d %d\n", tree->data_type, (int)tree->val);
+	return node_init(tree->data_type, tree->val, node_copy(tree->left), node_copy(tree->right));
 }
 
 
@@ -113,11 +72,16 @@ struct node_t *node_inread(struct node_t *tree, char **intext)
 			(*intext)++;
 			return tree;
 			break;
-		case 'x':
-			tree->data_type = X;
-			(*intext)++;
-			break;
 		default:
+			#define VARIABLE(sym, name)	\
+			if (strncmp(*intext, #sym, sizeof(#sym) - 1) == 0) {	\
+					tree->data_type = VAR;	\
+					tree->val = name;	\
+					(*intext) = (*intext) + sizeof(#sym) - 1;	\
+					break;	\
+				}
+			#include "variables.h"
+			#undef VARIABLE
 			#define OPERATOR(sym, name, act, outform)	\
 			if (strncmp(*intext, #sym, sizeof(#sym) - 1) == 0) {	\
 				tree->data_type = OPER;	\
@@ -224,8 +188,19 @@ void dump_write(struct node_t *tree, char**dump_text)
 	case DOUB:
 		asprintf(dump_text, "%s%lf];\n", *dump_text, tree->val);
 		break;
-	case X:
-		asprintf(dump_text, "%s\"x\"];\n", *dump_text);
+	case VAR:
+		switch((int)tree->val) {
+		#define VARIABLE(sym, name)	\
+		case name:	\
+			asprintf(dump_text, "%s\""#sym"\"];\n", *dump_text);	\
+			break;
+		#include "variables.h"
+		#undef VARIABLE
+		break;
+		default:
+			fprintf(stderr, "Unknown variable %d\n", (int)tree->val);
+			assert(0);
+		}
 		break;
 	case OPER:
 		switch((int)tree->val) {

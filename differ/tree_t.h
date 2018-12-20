@@ -22,10 +22,18 @@ enum OPERATORS
 enum DATA_TYPE
 {
 	TYPE_NULL = 0,
-	X,
+	VAR,
 	OPER,
 	INT,
 	DOUB,
+};
+
+enum VAR
+{
+	#define VARIABLE(sym, name) name,
+	VAR_NULL = 0,
+	#include "variables.h"
+	#undef VARIABLE
 };
 
 struct node_t
@@ -39,7 +47,7 @@ struct node_t
 struct node_t *node_ctor();
 struct node_t *node_ch_init(int type, char *name);
 struct node_t *node_int_init(int val);
-struct node_t *node_init(uint8_t type, val_t val);
+struct node_t *node_init(uint8_t type, val_t val, struct node_t *left, struct node_t *right);
 struct node_t *node_doub_init(double val);
 struct node_t *node_inread(struct node_t *tree, char **intext);
 struct node_t *node_copy(struct node_t *tree);
