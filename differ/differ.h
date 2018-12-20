@@ -7,17 +7,17 @@
 #ifndef DIFFER_H_
 #define DIFFER_H_
 
-#define PLUS(left, right)  node_init(OPER, PLUS,  left, right)
-#define MINUS(left, right) node_init(OPER, MINUS, left, right)
-#define DIV(left, right)   node_init(OPER, DIV,   left, right)
-#define MUL(left, right)   node_init(OPER, MUL,   left, right)
-#define SIN(left)          node_init(OPER, SIN,   left, NULL)
-#define COS(left)          node_init(OPER, COS,   left, NULL)
-#define TAN(left)		       node_init(OPER, COS,   left, NULL)
-#define CTAN(left)		     node_init(OPER, CTAN,  left, NULL)
-#define INT(val)		       node_init(INT,  val,   NULL, NULL)
-#define DOUB(val)		       node_init(DOUB, val,   NULL, NULL)
-#define VAR(name)		       node_init(VAR,  name,  NULL, NULL)
+#define PLUS(left, right)   node_init(OPER, PLUS,  left, right)
+#define MINUS(left, right)  node_init(OPER, MINUS, left, right)
+#define DIV(left, right)    node_init(OPER, DIV,   left, right)
+#define MUL(left, right)    node_init(OPER, MUL,   left, right)
+#define SIN(left)   node_init(OPER, SIN,   left, NULL)
+#define COS(left)   node_init(OPER, COS,   left, NULL)
+#define TAN(left)   node_init(OPER, COS,   left, NULL)
+#define CTAN(left)    node_init(OPER, CTAN,  left, NULL)
+#define INT(val)    node_init(INT,  val,   NULL, NULL)
+#define DOUB(val)   node_init(DOUB, val,   NULL, NULL)
+#define VAR(name)   node_init(VAR,  name,  NULL, NULL)
 
 void diff_run(FILE *fin);
 void func_dump(char *eq_text);
