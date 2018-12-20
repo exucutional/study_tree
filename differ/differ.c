@@ -169,7 +169,6 @@ struct node_t *dif_ctan(struct node_t *tree)
 	left = tree->left;
 	free(tree);
 	return DIV(MUL(INT(-1), differ(node_copy(left))), MUL(SIN(node_copy(left)), SIN(left)));
-	return tree;
 }
 
 void func_dump(char *eq_text)
